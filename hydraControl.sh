@@ -1,3 +1,4 @@
+#!/bin/bash
 # Basic UI for controlling the hydra network and enabling/removing services
 WEB=false
 EMAIL=false

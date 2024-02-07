@@ -1,3 +1,4 @@
+#!/bin/bash
 # Join the hydra network that was created by the createHydra.sh script
 # install k3s, and longhorn dependencies
 

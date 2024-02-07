@@ -1,3 +1,4 @@
+#!/bin/bash
 # Downloads and configures a kubernetes cluster using k3s kubevip and metallb and longhorn
 
 # Config Settings
