@@ -68,11 +68,12 @@ metadata:
   name: registry-pvc
   namespace: container-registry
 spec:
-    accessModes:
+  accessModes:
     - ReadWriteOnce
-    resources:
-        requests:
-            storage: 10Gi
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi
 EOF
 
 # Deploy the registry
