@@ -1,12 +1,13 @@
 # Downloads and configures a kubernetes cluster using k3s kubevip and metallb and longhorn
 
 # Config Settings
-export SERVICE_IP="192.168.1.100"
-export INTERNAL_IP="192.168.1.99"
+export SERVICE_IP="192.168.134.201"
+export INTERNAL_IP="192.168.134.200"
 
 # Ask the user for the service ip and internal ip
-read -p "Enter the service ip address: " SERVICE_IP
-read -p "Enter the internal ip address: " INTERNAL_IP
+# read -p "Enter the service ip address: " SERVICE_IP
+# read -p "Enter the internal ip address: " INTERNAL_IP
+
 
 # Ask the user for Virtual IP
 read -p "Enter the Virtual IP address: " VIP
@@ -21,13 +22,7 @@ KVVERSION=$(curl -sL https://api.github.com/repos/kube-vip/kube-vip/releases | j
 
 alias kube-vip="docker run --network host --rm ghcr.io/kube-vip/kube-vip:$KVVERSION"
 
-kube-vip manifest pod \
-    --interface $INTERFACE \
-    --address $VIP \
-    --controlplane \
-    --services \
-    --arp \
-    --leaderElection | tee /etc/kubernetes/manifests/kube-vip.yaml
+kube-vip manifest pod --interface $INTERFACE --address $VIP --controlplane --services --arp --leaderElection | tee /etc/kubernetes/manifests/kube-vip.yaml
 
 # Install MetalLB
 kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.3/config/manifests/metallb-native.yaml
