@@ -93,18 +93,18 @@ spec:
         labels:
             app: registry
         spec:
-        containers:
-        - name: registry
-          image: registry:2
-          ports:
-            - containerPort: 5000
-          volumeMounts:
-            - mountPath: /var/lib/registry
-          name: registry-storage
-        volumes:
-          - name: registry-storage
-            persistentVolumeClaim:
-              claimName: registry-pvc
+            containers:
+            - name: registry
+            image: registry:2
+            ports:
+                - containerPort: 5000
+            volumeMounts:
+                - mountPath: /var/lib/registry
+            name: registry-storage
+            volumes:
+            - name: registry-storage
+                persistentVolumeClaim:
+                claimName: registry-pvc
 EOF
 
 # Expose the registry to the internal metallb ip address
