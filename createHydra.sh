@@ -72,7 +72,7 @@ spec:
     - ReadWriteOnce
     resources:
         requests:
-        storage: 10Gi
+            storage: 10Gi
 EOF
 
 # Deploy the registry
