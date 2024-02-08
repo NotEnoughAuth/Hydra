@@ -2,8 +2,8 @@
 # Downloads and configures a kubernetes cluster using k3s kubevip and metallb and longhorn
 
 # Config Settings
-export SERVICE_IP="192.168.134.201"
-export INTERNAL_IP="192.168.134.200"
+export SERVICE_IP="192.168.134.200" # This is the start of the range of ip addresses that will be used by the metallb load balancer
+export INTERNAL_IP="192.168.134.209" # This is the internal ip address of the load balancer and the end of the range of ip addresses that will be used by the metallb load balancer
 
 # Ask the user for the service ip and internal ip
 # read -p "Enter the service ip address: " SERVICE_IP
@@ -16,14 +16,36 @@ read -p "Enter the Virtual IP address: " VIP
 # Install k3s
 curl -sfL https://get.k3s.io | sh -
 
+# Install kube-vip
+# Ensure that docker is installed
+if [ -x "$(command -v apt)" ]; then
+    apt install -y docker.io
+elif [ -x "$(command -v dnf)" ]; then
+    dnf install -y docker
+elif [ -x "$(command -v yum)" ]; then
+    yum install -y docker
+fi
+
+# Start and enable docker
+systemctl enable --now docker
+
+# Install jq
+if [ -x "$(command -v apt)" ]; then
+    apt install -y jq
+elif [ -x "$(command -v dnf)" ]; then
+    dnf install -y jq
+elif [ -x "$(command -v yum)" ]; then
+    yum install -y jq
+fi
+
 # Configuration settings for kube-vip
 # VIP="192.168.1.200"
-INTERFACE="eth0"
+INTERFACE="ens33"
 KVVERSION=$(curl -sL https://api.github.com/repos/kube-vip/kube-vip/releases | jq -r ".[0].name")
 
-alias kube-vip="docker run --network host --rm ghcr.io/kube-vip/kube-vip:$KVVERSION"
+# alias kube-vip="docker run --network host --rm ghcr.io/kube-vip/kube-vip:$KVVERSION"
 
-kube-vip manifest pod --interface $INTERFACE --address $VIP --controlplane --services --arp --leaderElection | tee /etc/kubernetes/manifests/kube-vip.yaml
+docker run --network host --rm ghcr.io/kube-vip/kube-vip:$KVVERSION manifest pod --interface $INTERFACE --address $VIP --controlplane --services --arp --leaderElection | tee /etc/kubernetes/manifests/kube-vip.yaml
 
 # Install MetalLB
 kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.3/config/manifests/metallb-native.yaml
@@ -37,7 +59,7 @@ metadata:
   namespace: metallb-system
 spec:
   addresses:
-  - 192.168.9.1-192.168.9.5
+  - $SERVICE_IP-$INTERNAL_IP
 EOF
 
 # Install longhorn
@@ -52,6 +74,7 @@ fi
 
 #  enable the iscsid service
 systemctl enable --now open-iscsi
+systemctl enable --now iscsid
 
 # Install Longhorn
 kubectl apply -f https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/longhorn.yaml
@@ -74,7 +97,7 @@ spec:
   storageClassName: longhorn
   resources:
     requests:
-      storage: 10Gi
+      storage: 2Gi # TODO SET THE SIZE OF THE VOLUME HERE TO LARGER NUMBER
 EOF
 
 # Deploy the registry
@@ -87,24 +110,24 @@ metadata:
 spec:
     replicas: 3
     selector:
-        matchLabels:
+      matchLabels:
         app: registry
     template:
-        metadata:
+      metadata:
         labels:
-            app: registry
-        spec:
-            containers:
-            - name: registry
+          app: registry
+      spec:
+          containers:
+          - name: registry
             image: registry:2
             ports:
-                - containerPort: 5000
+              - containerPort: 5000
             volumeMounts:
-                - mountPath: /var/lib/registry
-            name: registry-storage
-            volumes:
+              - name: registry-storage
+                mountPath: /var/lib/registry
+          volumes:
             - name: registry-storage
-                persistentVolumeClaim:
+              persistentVolumeClaim:
                 claimName: registry-pvc
 EOF
 
@@ -119,7 +142,7 @@ spec:
     selector:
         app: registry
     ports:
-    - protocol: TCP
+      - protocol: TCP
         port: 5000
         targetPort: 5000
     type: LoadBalancer
